@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Affiliate Dashboard - Partnerize + Zeropark + Awin</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  color: #1a1a1a;
+  padding: 20px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.container { max-width: 1400px; margin: 0 auto; }
+h1 { 
+  color: #007aff;
+  margin-bottom: 8px; 
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+}
+.subtitle {
+  color: #8e8e93;
+  font-size: 14px;
+  margin-bottom: 30px;
+  font-weight: 400;
+}
+
+/* Setup Form */
+.setup-form {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 16px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+}
+.form-section {
+  margin-bottom: 30px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid #e5e5ea;
+}
+.form-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.form-section h3 {
+  color: #1a1a1a;
+  font-size: 17px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.form-group {
+  margin-bottom: 15px;
+}
+label {
+  display: block;
+  margin-bottom: 6px;
+  color: #8e8e93;
+  font-size: 13px;
+  font-weight: 500;
+}
+input {
+  width: 100%;
+  padding: 12px 14px;
+  background: #f5f5f7;
+  border: 1px solid #d1d1d6;
+  border-radius: 10px;
+  color: #1a1a1a;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+input:focus {
+  outline: none;
+  border-color: #007aff;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+}
+input::placeholder {
+  color: #c7c7cc;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+.btn {
+  padding: 14px 24px;
+  background: #007aff;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+.btn:hover {
+  background: #0051d5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-secondary {
+  background: #f5f5f7;
+  color: #007aff;
+  margin-top: 10px;
+  box-shadow: none;
+}
+.btn-secondary:hover {
+  background: #e5e5ea;
+  transform: translateY(-1px);
+}
+.btn-secondary.disconnect {
+  background: #ff3b30;
+  color: #ffffff;
+}
+.btn-secondary.disconnect:hover {
+  background: #d62e24;
+}
+
+/* Dashboard */
+.dashboard {
+  display: none;
+}
+.dashboard.active {
+  display: block;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: #ffffff;
+  padding: 6px;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.tab {
+  padding: 10px 20px;
+  background: transparent;
+  color: #8e8e93;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s;
+  border-radius: 10px;
+  flex: 1;
+}
+.tab:hover {
+  color: #1a1a1a;
+  background: #f5f5f7;
+}
+.tab.active {
+  color: #ffffff;
+  background: #007aff;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.refresh-btn {
+  background: #f5f5f7;
+  color: #007aff;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.refresh-btn:hover {
+  background: #e5e5ea;
+  transform: translateY(-1px);
+}
+.auto-refresh {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.auto-refresh select {
+  background: #f5f5f7;
+  border: 1px solid #d1d1d6;
+  border-radius: 10px;
+  color: #1a1a1a;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.auto-refresh select:hover {
+  background: #e5e5ea;
+}
+.last-update {
+  color: #8e8e93;
+  font-size: 13px;
+  margin-left: auto;
+  font-weight: 500;
+}
+
+/* Tab Content */
+.tab-content {
+  display: none;
+}
+.tab-content.active {
+  display: block;
+}
+
+/* Status Grid */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 30px;
+}
+.status-card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 16px;
+  border-left: 4px solid;
+  transition: all 0.2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+.status-card.pending { border-left-color: #ff9500; }
+.status-card.approved { border-left-color: #34c759; }
+.status-card.confirmed { border-left-color: #007aff; }
+.status-card.available { border-left-color: #30d158; }
+.status-card.paid { border-left-color: #5ac8fa; }
+.status-label {
+  font-size: 13px;
+  color: #8e8e93;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+.status-value {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #1a1a1a;
+}
+.status-currency {
+  font-size: 13px;
+  color: #8e8e93;
+  font-weight: 500;
+}
+.change-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.change-badge.up {
+  background: rgba(52, 199, 89, 0.15);
+  color: #34c759;
+}
+.change-badge.down {
+  background: rgba(255, 59, 48, 0.15);
+  color: #ff3b30;
+}
+
+/* Simple Table */
+.simple-table {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.simple-table h3 {
+  color: #1a1a1a;
+  font-size: 17px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+.table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  padding: 14px 0;
+  border-bottom: 1px solid #e5e5ea;
+  font-size: 15px;
+  align-items: center;
+}
+.table-row:last-child {
+  border-bottom: none;
+}
+.table-row:first-child {
+  font-weight: 600;
+  color: #8e8e93;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Notifications Log */
+.notif-log {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  max-height: 400px;
+  overflow-y: auto;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.notif-log h3 {
+  color: #1a1a1a;
+  font-size: 17px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+.notif-entry {
+  padding: 14px;
+  border-left: 3px solid #007aff;
+  background: #f5f5f7;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.notif-time {
+  color: #8e8e93;
+  font-size: 12px;
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.notif-msg {
+  color: #1a1a1a;
+  font-weight: 400;
+}
+.notif-empty {
+  text-align: center;
+  padding: 40px;
+  color: #c7c7cc;
+}
+
+/* Error/Success Messages */
+.error, .success {
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+.error.active, .success.active {
+  display: block;
+}
+.error {
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  color: #ff3b30;
+}
+.success {
+  background: rgba(52, 199, 89, 0.1);
+  border: 1px solid rgba(52, 199, 89, 0.3);
+  color: #34c759;
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #8e8e93;
+  font-weight: 500;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: #1a1a1a;
+  color: #ffffff;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s;
+  z-index: 1000;
+  font-weight: 500;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Connection Status */
+.conn-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.conn-status.connected {
+  background: rgba(52, 199, 89, 0.15);
+  color: #34c759;
+}
+.conn-status.disconnected {
+  background: rgba(255, 59, 48, 0.15);
+  color: #ff3b30;
+}
+.conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>
+    💰 Affiliate Dashboard
+    <span class="conn-status disconnected" id="conn-status">
+      <span class="conn-dot"></span>
+      <span id="conn-text">Rozłączony</span>
+    </span>
+  </h1>
+  <div class="subtitle">
+    Partnerize · Zeropark · Awin
+    <span id="proxy-status" style="margin-left: 15px; color: #8e8e93; font-size: 12px;"></span>
+  </div>
+  
+  <!-- Setup Form -->
+  <div class="setup-form" id="setup">
+    <div class="error" id="setup-error"></div>
+    
+    <div class="form-section">
+      <h3>🔵 Partnerize Payment Monitor</h3>
+      <div class="form-group">
+        <label>Application Key</label>
+        <input type="text" id="pz-app-key" placeholder="Your Application Key">
+      </div>
+      <div class="form-group">
+        <label>User API Key</label>
+        <input type="password" id="pz-api-key" placeholder="Your User API Key">
+      </div>
+      <div class="form-group">
+        <label>Publisher ID</label>
+        <input type="text" id="pz-publisher-id" placeholder="10111308478">
+      </div>
+    </div>
+    
+    <div class="form-section">
+      <h3>🟢 Zeropark Stats</h3>
+      <div class="form-group">
+        <label>API Token</label>
+        <input type="password" id="zp-token" placeholder="Your Zeropark API Token">
+      </div>
+    </div>
+    
+    <div class="form-section">
+      <h3>🟣 Awin Transactions</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>OAuth2 Bearer Token</label>
+          <input type="password" id="awin-token" placeholder="Your Awin API Token">
+        </div>
+        <div class="form-group">
+          <label>Publisher ID</label>
+          <input type="text" id="awin-publisher-id" placeholder="Your Publisher ID">
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-section">
+      <h3>📧 Email Notifications (opcjonalne)</h3>
+      <p style="color: #8e8e93; font-size: 13px; margin-bottom: 15px;">
+        Zarejestruj się na <a href="https://emailjs.com" target="_blank" style="color: #007aff;">emailjs.com</a> aby otrzymywać powiadomienia email
+      </p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>EmailJS Service ID</label>
+          <input type="text" id="emailjs-service" placeholder="service_xxxxxxx">
+        </div>
+        <div class="form-group">
+          <label>EmailJS Template ID</label>
+          <input type="text" id="emailjs-template" placeholder="template_xxxxxxx">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>EmailJS Public Key</label>
+          <input type="text" id="emailjs-pubkey" placeholder="xxxxxxxxxxxxxx">
+        </div>
+        <div class="form-group">
+          <label>Twój Email</label>
+          <input type="email" id="notify-email" placeholder="twoj@email.com">
+        </div>
+      </div>
+      
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e5ea;">
+        <label style="margin-bottom: 12px; display: block; font-size: 14px; color: #1a1a1a; font-weight: 600;">
+          🔔 Wysyłaj powiadomienia dla:
+        </label>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #1a1a1a; font-weight: 500;">
+            <input type="checkbox" id="notify-partnerize" checked style="width: auto; margin: 0; cursor: pointer;">
+            <span>Partnerize</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #1a1a1a; font-weight: 500;">
+            <input type="checkbox" id="notify-zeropark" style="width: auto; margin: 0; cursor: pointer;">
+            <span>Zeropark</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #1a1a1a; font-weight: 500;">
+            <input type="checkbox" id="notify-awin" style="width: auto; margin: 0; cursor: pointer;">
+            <span>Awin</span>
+          </label>
+        </div>
+        <p style="color: #8e8e93; font-size: 12px; margin-top: 10px;">
+          Domyślnie tylko Partnerize wysyła powiadomienia. Zaznacz inne platformy jeśli chcesz otrzymywać powiadomienia również od nich.
+        </p>
+      </div>
+    </div>
+    
+    <button class="btn" id="connect-btn">→ Połącz Dashboard</button>
+    
+    <div style="margin-top: 15px; padding: 14px; background: rgba(0, 122, 255, 0.1); border: 1px solid rgba(0, 122, 255, 0.3); border-radius: 10px; font-size: 13px; color: #1a1a1a;">
+      <strong>ℹ️ Ważne:</strong> Dashboard automatycznie próbuje 4 różne proxy. Jeśli wystąpią błędy, użyj przycisku <strong>"🔀 Zmień Proxy"</strong> w dashboardzie.
+    </div>
+    
+    <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px; padding: 12px; background: #f5f5f7; border-radius: 10px;">
+      <input type="checkbox" id="auto-login" style="width: auto; margin: 0; cursor: pointer;">
+      <label for="auto-login" style="margin: 0; cursor: pointer; color: #1a1a1a; font-weight: 500;">
+        💾 Zapamiętaj i loguj automatycznie przy otwarciu strony
+      </label>
+    </div>
+    
+    <button class="btn btn-secondary" id="load-saved-btn" style="display:none;">📋 Załaduj Zapisaną Konfigurację</button>
+  </div>
+  
+  <!-- Dashboard -->
+  <div class="dashboard" id="dashboard">
+    <div class="controls">
+      <button class="refresh-btn" id="refresh-btn">🔄 Odśwież</button>
+      
+      <button class="refresh-btn" id="switch-proxy-btn" title="Zmień proxy jeśli występują błędy">
+        🔀 Zmień Proxy
+      </button>
+      
+      <div class="auto-refresh">
+        <label style="margin: 0; color: #8b95a5;">Auto-refresh:</label>
+        <select id="auto-refresh">
+          <option value="0">Wyłączony</option>
+          <option value="60000">1 minuta</option>
+          <option value="300000">5 minut</option>
+          <option value="900000" selected>15 minut</option>
+          <option value="1800000">30 minut</option>
+        </select>
+      </div>
+      
+      <button class="btn-secondary" id="enable-notifications" style="padding: 10px 18px; border-radius: 10px; cursor: pointer; display: none;">
+        🔔 Włącz Powiadomienia Push
+      </button>
+      
+      <button class="btn-secondary disconnect" id="disconnect-btn" style="padding: 10px 18px; border-radius: 10px; cursor: pointer;">
+        🔌 Rozłącz
+      </button>
+      
+      <div class="last-update" id="last-update">Nie zaktualizowano</div>
+    </div>
+    
+    <div class="error" id="dash-error"></div>
+    <div class="success" id="dash-success"></div>
+    
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="partnerize">Partnerize</button>
+      <button class="tab" data-tab="zeropark">Zeropark</button>
+      <button class="tab" data-tab="awin">Awin</button>
+      <button class="tab" data-tab="notifications">Powiadomienia</button>
+    </div>
+    
+    <!-- Partnerize Tab -->
+    <div class="tab-content active" id="tab-partnerize">
+      <div class="status-grid" id="pz-grid">
+        <div class="loading">Ładowanie danych...</div>
+      </div>
+    </div>
+    
+    <!-- Zeropark Tab -->
+    <div class="tab-content" id="tab-zeropark">
+      <div class="simple-table" id="zp-table">
+        <h3>📊 Statystyki Zeropark</h3>
+        <div class="loading">Ładowanie danych...</div>
+      </div>
+    </div>
+    
+    <!-- Awin Tab -->
+    <div class="tab-content" id="tab-awin">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin: 0;">📊 Transakcje Awin</h3>
+        <div id="awin-status" style="padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+          Loading...
+        </div>
+      </div>
+      <div class="simple-table" id="awin-table">
+        <div class="loading">Ładowanie danych...</div>
+      </div>
+    </div>
+    
+    <!-- Notifications Tab -->
+    <div class="tab-content" id="tab-notifications">
+      <div class="notif-log" id="notif-log">
+        <h3>📝 Log Powiadomień</h3>
+        <div class="notif-empty">Brak zmian do wyświetlenia</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════
+// CONFIG & STATE
+// ══════════════════════════════════════════════════════════
+// Multiple CORS proxies with fallback (in order of preference)
+const CORS_PROXIES = [
+  'https://corsproxy.io/?',
+  'https://cors-anywhere.herokuapp.com/',
+  'https://api.allorigins.win/raw?url=',
+  'https://api.codetabs.com/v1/proxy?quest='
+];
+let currentProxyIndex = 0;
+let isLocalFile = false;
+
+function getProxy() {
+  return CORS_PROXIES[currentProxyIndex];
+}
+
+function tryNextProxy() {
+  currentProxyIndex = (currentProxyIndex + 1) % CORS_PROXIES.length;
+  console.log(`Switching to proxy: ${CORS_PROXIES[currentProxyIndex]}`);
+  updateProxyStatus();
+}
+
+function updateProxyStatus() {
+  const status = document.getElementById('proxy-status');
+  if (status) {
+    const proxyName = getProxy().split('//')[1].split('/')[0].split('.')[0];
+    status.textContent = `Proxy: ${proxyName} (${currentProxyIndex + 1}/${CORS_PROXIES.length})`;
+  }
+}
+
+function checkLocalFile() {
+  if (window.location.protocol === 'file:') {
+    isLocalFile = true;
+    console.error('');
+    console.error('═══════════════════════════════════════════════════════');
+    console.error('⚠️  KRYTYCZNY BŁĄD: PLIK OTWARTY LOKALNIE!');
+    console.error('═══════════════════════════════════════════════════════');
+    console.error('');
+    console.error('Otwierasz dashboard z dysku (file:///)');
+    console.error('API będzie ZAWSZE blokowane przez CORS!');
+    console.error('');
+    console.error('✅ ROZWIĄZANIE 1 - GitHub Pages (ZALECANE):');
+    console.error('   1. Wgraj plik na GitHub');
+    console.error('   2. Settings → Pages → Enable');
+    console.error('   3. Otwórz: https://[username].github.io/[repo]/');
+    console.error('');
+    console.error('✅ ROZWIĄZANIE 2 - Lokalny serwer HTTP:');
+    console.error('   Otwórz terminal w folderze z plikiem:');
+    console.error('   python3 -m http.server 8000');
+    console.error('   Potem otwórz: http://localhost:8000');
+    console.error('');
+    console.error('═══════════════════════════════════════════════════════');
+    console.error('');
+    
+    // Show big warning in UI
+    setTimeout(() => {
+      showError('setup-error', 
+        '⚠️ BŁĄD: Otwierasz plik lokalnie! ' +
+        'API będzie zablokowane przez CORS. ' +
+        'Wgraj na GitHub Pages lub użyj lokalnego serwera HTTP. ' +
+        'Szczegóły w Console (F12).');
+    }, 100);
+    
+    return true;
+  }
+  return false;
+}
+
+const PZ_BASE_URLS = [
+  'https://api.performancehorizon.com',
+  'https://api.partnerize.com'
+];
+const ZP_BASE = 'https://panel.zeropark.com/api';
+const AWIN_BASE = 'https://api.awin.com';
+
+let config = {};
+let prevData = {
+  pz: null,
+  zp: null,
+  awin: null
+};
+let notifLog = [];
+let autoRefreshTimer = null;
+let pushReady = false;
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Check if running from file:// (critical issue)
+  checkLocalFile();
+  
+  // Initialize proxy status display
+  updateProxyStatus();
+  
+  loadNotifLog();
+  checkSavedConfig();
+  initTabs();
+  initEventListeners();
+  checkNotificationPermission();
+  
+  // Check for auto-login
+  checkAutoLogin();
+});
+
+async function checkAutoLogin() {
+  const autoLogin = localStorage.getItem('auto_login');
+  if (autoLogin === 'true') {
+    const saved = localStorage.getItem('affiliate_config');
+    if (saved) {
+      console.log('Auto-login enabled, connecting...');
+      // Small delay to let UI render
+      setTimeout(() => {
+        loadSavedConfig();
+        connect();
+      }, 500);
+    }
+  }
+}
+
+function checkSavedConfig() {
+  const saved = localStorage.getItem('affiliate_config');
+  if (saved) {
+    document.getElementById('load-saved-btn').style.display = 'block';
+  }
+}
+
+function loadSavedConfig() {
+  const saved = localStorage.getItem('affiliate_config');
+  if (!saved) return;
+  
+  const cfg = JSON.parse(saved);
+  if (cfg.pzAppKey) document.getElementById('pz-app-key').value = cfg.pzAppKey;
+  if (cfg.pzApiKey) document.getElementById('pz-api-key').value = cfg.pzApiKey;
+  if (cfg.pzPublisherId) document.getElementById('pz-publisher-id').value = cfg.pzPublisherId;
+  if (cfg.zpToken) document.getElementById('zp-token').value = cfg.zpToken;
+  if (cfg.awinToken) document.getElementById('awin-token').value = cfg.awinToken;
+  if (cfg.awinPublisherId) document.getElementById('awin-publisher-id').value = cfg.awinPublisherId;
+  if (cfg.emailjsService) document.getElementById('emailjs-service').value = cfg.emailjsService;
+  if (cfg.emailjsTemplate) document.getElementById('emailjs-template').value = cfg.emailjsTemplate;
+  if (cfg.emailjsPubkey) document.getElementById('emailjs-pubkey').value = cfg.emailjsPubkey;
+  if (cfg.notifyEmail) document.getElementById('notify-email').value = cfg.notifyEmail;
+  
+  // Load notification preferences (default: only Partnerize)
+  document.getElementById('notify-partnerize').checked = cfg.notifyPartnerize !== false;
+  document.getElementById('notify-zeropark').checked = cfg.notifyZeropark === true;
+  document.getElementById('notify-awin').checked = cfg.notifyAwin === true;
+  
+  // Load auto-login preference
+  const autoLogin = localStorage.getItem('auto_login');
+  if (autoLogin) {
+    document.getElementById('auto-login').checked = autoLogin === 'true';
+  }
+  
+  showToast('Załadowano zapisaną konfigurację');
+}
+
+function initTabs() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabName = tab.dataset.tab;
+      
+      // Update tabs
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      // Update content
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+    });
+  });
+}
+
+function initEventListeners() {
+  document.getElementById('connect-btn').addEventListener('click', connect);
+  document.getElementById('load-saved-btn').addEventListener('click', loadSavedConfig);
+  document.getElementById('refresh-btn').addEventListener('click', () => refreshAll(true));
+  document.getElementById('switch-proxy-btn').addEventListener('click', switchProxyManually);
+  document.getElementById('auto-refresh').addEventListener('change', setupAutoRefresh);
+  document.getElementById('enable-notifications').addEventListener('click', requestNotificationPermission);
+  document.getElementById('disconnect-btn').addEventListener('click', disconnect);
+  
+  // Enter key in inputs
+  document.querySelectorAll('#setup input').forEach(input => {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') connect();
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// CONNECTION
+// ══════════════════════════════════════════════════════════
+async function connect() {
+  showError('setup-error', '');
+  
+  const pzAppKey = document.getElementById('pz-app-key').value.trim();
+  const pzApiKey = document.getElementById('pz-api-key').value.trim();
+  const pzPublisherId = document.getElementById('pz-publisher-id').value.trim();
+  const zpToken = document.getElementById('zp-token').value.trim();
+  const awinToken = document.getElementById('awin-token').value.trim();
+  const awinPublisherId = document.getElementById('awin-publisher-id').value.trim();
+  const emailjsService = document.getElementById('emailjs-service').value.trim();
+  const emailjsTemplate = document.getElementById('emailjs-template').value.trim();
+  const emailjsPubkey = document.getElementById('emailjs-pubkey').value.trim();
+  const notifyEmail = document.getElementById('notify-email').value.trim();
+  const notifyPartnerize = document.getElementById('notify-partnerize').checked;
+  const notifyZeropark = document.getElementById('notify-zeropark').checked;
+  const notifyAwin = document.getElementById('notify-awin').checked;
+  
+  if (!pzApiKey && !zpToken && !awinToken) {
+    showError('setup-error', 'Wypełnij co najmniej jeden klucz API');
+    return;
+  }
+  
+  config = {
+    pzAppKey, pzApiKey, pzPublisherId,
+    zpToken,
+    awinToken, awinPublisherId,
+    emailjsService, emailjsTemplate, emailjsPubkey, notifyEmail,
+    notifyPartnerize, notifyZeropark, notifyAwin
+  };
+  
+  // Save config
+  localStorage.setItem('affiliate_config', JSON.stringify(config));
+  
+  // Save auto-login preference
+  const autoLogin = document.getElementById('auto-login').checked;
+  localStorage.setItem('auto_login', autoLogin.toString());
+  
+  // Initialize EmailJS
+  if (emailjsService && emailjsPubkey) {
+    emailjs.init(emailjsPubkey);
+  }
+  
+  // Load previous state
+  loadPrevState();
+  
+  setLoading(true);
+  
+  try {
+    await refreshAll(false);
+    
+    // Show dashboard
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('dashboard').classList.add('active');
+    setConnStatus(true);
+    updateProxyStatus();
+    
+    // Setup auto-refresh
+    setupAutoRefresh();
+    
+    showToast('Dashboard połączony pomyślnie!');
+    
+  } catch(e) {
+    console.error('Connection error:', e);
+    let errorMsg = 'Błąd połączenia: ' + e.message;
+    
+    // Add troubleshooting hints
+    if (e.message.includes('Failed to fetch') || e.message.includes('TypeError')) {
+      errorMsg += '\n\n💡 Spróbuj:\n';
+      errorMsg += '• Kliknij "🔀 Zmień Proxy" po połączeniu\n';
+      errorMsg += '• Sprawdź czy API tokens są aktualne\n';
+      errorMsg += '• Odczekaj 1-2 minuty (rate limits)';
+    }
+    
+    showError('setup-error', errorMsg);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function loadPrevState() {
+  const pzPrev = localStorage.getItem('pz_prev');
+  const zpPrev = localStorage.getItem('zp_prev');
+  const awinPrev = localStorage.getItem('awin_prev');
+  
+  if (pzPrev) prevData.pz = JSON.parse(pzPrev);
+  if (zpPrev) prevData.zp = JSON.parse(zpPrev);
+  if (awinPrev) prevData.awin = JSON.parse(awinPrev);
+}
+
+async function switchProxyManually() {
+  tryNextProxy();
+  showToast(`Przełączono na: ${getProxy().split('//')[1].split('/')[0]}`);
+  
+  // Automatically refresh after proxy switch
+  try {
+    await refreshAll(true);
+  } catch(e) {
+    console.error('Refresh after proxy switch failed:', e);
+  }
+}
+
+function disconnect() {
+  if (confirm('Czy na pewno chcesz się rozłączyć? Konfiguracja zostanie zachowana.')) {
+    // Clear auto-refresh
+    if (autoRefreshTimer) {
+      clearInterval(autoRefreshTimer);
+      autoRefreshTimer = null;
+    }
+    
+    // Show setup form
+    document.getElementById('dashboard').classList.remove('active');
+    document.getElementById('setup').style.display = 'block';
+    setConnStatus(false);
+    
+    showToast('Rozłączono dashboard');
+  }
+}
+
+async function refreshAll(manual = false) {
+  showError('dash-error', '');
+  
+  const promises = [];
+  
+  if (config.pzApiKey) promises.push(refreshPartnerize(manual));
+  if (config.zpToken) promises.push(refreshZeropark(manual));
+  if (config.awinToken) promises.push(refreshAwin(manual));
+  
+  try {
+    await Promise.all(promises);
+    updateTimestamp();
+    if (manual) showToast('Dane odświeżone pomyślnie!');
+  } catch(e) {
+    console.error('Refresh error:', e);
+    
+    let errorMsg = 'Błąd odświeżania: ' + e.message;
+    
+    if (e.message.includes('Failed to fetch') || e.message.includes('All proxies failed')) {
+      errorMsg += '\n\n💡 Kliknij "🔀 Zmień Proxy" i spróbuj ponownie';
+    }
+    
+    showError('dash-error', errorMsg);
+    if (manual) showToast('Błąd odświeżania - spróbuj zmienić proxy');
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// PARTNERIZE
+// ══════════════════════════════════════════════════════════
+async function refreshPartnerize(manual) {
+  try {
+    const data = await fetchPartnerizePaymentSummary();
+    const cards = processPartnerizePaymentSummary(data);
+    
+    // Detect changes
+    if (prevData.pz && !manual) {
+      const changes = detectPartnerizeChanges(prevData.pz, cards);
+      if (changes.length > 0 && config.notifyPartnerize) {
+        notifyChanges('Partnerize', changes);
+      }
+    }
+    
+    // Save current state
+    prevData.pz = cards.map(c => ({
+      status: c.status,
+      currency: c.currency,
+      amount: c.amount
+    }));
+    localStorage.setItem('pz_prev', JSON.stringify(prevData.pz));
+    
+    renderPartnerizeDashboard(cards);
+    
+  } catch(e) {
+    console.error('Partnerize error:', e);
+    throw e;
+  }
+}
+
+async function fetchPartnerizePaymentSummary() {
+  const endpoint = `/user/publisher/${config.pzPublisherId}/payment/summary`;
+  
+  let lastError = null;
+  let proxyAttempts = 0;
+  const maxProxyAttempts = CORS_PROXIES.length;
+  
+  // Try all base URLs with current proxy, then try next proxy
+  while (proxyAttempts < maxProxyAttempts) {
+    for (const baseUrl of PZ_BASE_URLS) {
+      const fullUrl = baseUrl + endpoint;
+      
+      const authString = config.pzAppKey + ':' + config.pzApiKey;
+      const headers = {
+        'Authorization': 'Basic ' + btoa(authString),
+        'Accept': 'application/json'
+      };
+      
+      const url = getProxy() + encodeURIComponent(fullUrl);
+      
+      try {
+        const res = await fetch(url, { headers });
+        
+        if (!res.ok) {
+          if (baseUrl === PZ_BASE_URLS[PZ_BASE_URLS.length - 1]) {
+            lastError = new Error(`HTTP ${res.status}`);
+            continue;
+          }
+          continue;
+        }
+        
+        const data = await res.json();
+        console.log('Partnerize success with proxy:', getProxy());
+        return data;
+        
+      } catch(e) {
+        console.warn(`Partnerize failed with ${baseUrl} and proxy ${getProxy()}:`, e.message);
+        lastError = e;
+        
+        if (baseUrl === PZ_BASE_URLS[PZ_BASE_URLS.length - 1]) {
+          // All base URLs failed, try next proxy
+          break;
+        }
+      }
+    }
+    
+    proxyAttempts++;
+    if (proxyAttempts < maxProxyAttempts) {
+      tryNextProxy();
+      console.log('Retrying Partnerize with next proxy...');
+    }
+  }
+  
+  throw new Error('All proxies failed: ' + (lastError?.message || 'Unknown error'));
+}
+
+function processPartnerizePaymentSummary(data) {
+  // Handle nested structure: data.payments.summary
+  let payment = null;
+  
+  if (data.payments?.summary) {
+    payment = data.payments.summary;
+  } else if (data.payment?.summary) {
+    payment = data.payment.summary;
+  } else if (data.summary) {
+    payment = data.summary;
+  } else {
+    payment = data;
+  }
+  
+  const cards = [];
+  
+  for (const [status, statusData] of Object.entries(payment)) {
+    if (status === 'discrepancy' || status === 'execution_time') continue;
+    if (!statusData || typeof statusData !== 'object') continue;
+    if (Array.isArray(statusData)) continue;
+    
+    for (const [currency, value] of Object.entries(statusData)) {
+      if (/^[A-Z]{3}$/.test(currency)) {
+        const amount = parseFloat(value);
+        if (!isNaN(amount) && amount > 0) {
+          cards.push({ status, currency, amount });
+        }
+      }
+    }
+  }
+  
+  // Add empty statuses
+  const allStatuses = ['pending', 'approved', 'confirmed', 'available', 'paid'];
+  const existingStatuses = new Set(cards.map(c => c.status));
+  
+  for (const status of allStatuses) {
+    if (!existingStatuses.has(status)) {
+      cards.push({ status, currency: 'GBP', amount: 0 });
+    }
+  }
+  
+  // Sort by status order
+  const statusOrder = { pending: 0, approved: 1, confirmed: 2, available: 3, paid: 4 };
+  cards.sort((a, b) => (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99));
+  
+  return cards;
+}
+
+function detectPartnerizeChanges(prev, current) {
+  const changes = [];
+  const prevMap = Object.fromEntries(prev.map(p => [`${p.status}_${p.currency}`, p.amount]));
+  
+  for (const card of current) {
+    const key = `${card.status}_${card.currency}`;
+    const prevAmount = prevMap[key] || 0;
+    
+    if (Math.abs(prevAmount - card.amount) > 0.01) {
+      const diff = card.amount - prevAmount;
+      changes.push({
+        status: card.status,
+        currency: card.currency,
+        old: prevAmount,
+        new: card.amount,
+        diff: diff
+      });
+    }
+  }
+  
+  return changes;
+}
+
+const PZ_STATUS_LABELS = {
+  pending: 'Oczekujące',
+  approved: 'Zatwierdzone',
+  confirmed: 'Potwierdzone',
+  available: 'Dostępne',
+  paid: 'Wypłacone'
+};
+
+function renderPartnerizeDashboard(cards) {
+  const grid = document.getElementById('pz-grid');
+  
+  const html = cards.map(card => {
+    const opacity = card.amount === 0 ? 'opacity: 0.5;' : '';
+    const emptyBadge = card.amount === 0 ? '<small style="color: #8b95a5;">Brak</small>' : '';
+    
+    return `
+    <div class="status-card ${card.status}" style="${opacity}">
+      <div class="status-label">${PZ_STATUS_LABELS[card.status] || card.status} ${emptyBadge}</div>
+      <div class="status-value">${formatMoney(card.amount, card.currency)}</div>
+      <div class="status-currency">${card.currency}</div>
+    </div>
+  `;
+  }).join('');
+  
+  grid.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════
+// ZEROPARK
+// ══════════════════════════════════════════════════════════
+async function refreshZeropark(manual) {
+  try {
+    const yesterday = await fetchZeroparkStats('YESTERDAY');
+    const thisMonth = await fetchZeroparkStats('THIS_MONTH');
+    
+    const data = { yesterday, thisMonth };
+    
+    // Detect changes
+    if (prevData.zp && !manual) {
+      const changes = detectZeroparkChanges(prevData.zp, data);
+      if (changes.length > 0 && config.notifyZeropark) {
+        notifyChanges('Zeropark', changes);
+      }
+    }
+    
+    prevData.zp = data;
+    localStorage.setItem('zp_prev', JSON.stringify(prevData.zp));
+    
+    renderZeroparkTable(data);
+    
+  } catch(e) {
+    console.error('Zeropark error:', e);
+    throw e;
+  }
+}
+
+async function fetchZeroparkStats(interval) {
+  const endpoint = `/stats/campaign/all?interval=${interval}`;
+  const fullUrl = ZP_BASE + endpoint;
+  
+  const headers = {
+    'api-token': config.zpToken,
+    'Accept': 'application/json'
+  };
+  
+  let lastError = null;
+  
+  // Try all proxies
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
+    const url = getProxy() + encodeURIComponent(fullUrl);
+    
+    try {
+      const res = await fetch(url, { headers });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log('Zeropark success with proxy:', getProxy());
+      return data.summary || {};
+      
+    } catch(e) {
+      console.warn(`Zeropark failed with proxy ${getProxy()}:`, e.message);
+      lastError = e;
+      
+      if (i < CORS_PROXIES.length - 1) {
+        tryNextProxy();
+        console.log('Retrying Zeropark with next proxy...');
+      }
+    }
+  }
+  
+  throw lastError || new Error('All proxies failed');
+}
+
+function detectZeroparkChanges(prev, current) {
+  const changes = [];
+  
+  if (prev.yesterday && current.yesterday) {
+    if (Math.abs((prev.yesterday.profit || 0) - (current.yesterday.profit || 0)) > 0.01) {
+      changes.push({
+        period: 'Wczoraj',
+        metric: 'Profit',
+        old: prev.yesterday.profit || 0,
+        new: current.yesterday.profit || 0
+      });
+    }
+  }
+  
+  return changes;
+}
+
+function renderZeroparkTable(data) {
+  const table = document.getElementById('zp-table');
+  
+  const html = `
+    <h3>📊 Statystyki Zeropark</h3>
+    <div class="table-row">
+      <div>Okres</div>
+      <div>Wydatki</div>
+      <div>Zysk</div>
+    </div>
+    <div class="table-row">
+      <div>Wczoraj</div>
+      <div>$${(data.yesterday?.spent || 0).toFixed(2)}</div>
+      <div style="color: ${(data.yesterday?.profit || 0) > 0 ? '#34c759' : '#ff3b30'}; font-weight: 600;">
+        $${(data.yesterday?.profit || 0).toFixed(2)}
+      </div>
+    </div>
+    <div class="table-row">
+      <div>Ten miesiąc</div>
+      <div>$${(data.thisMonth?.spent || 0).toFixed(2)}</div>
+      <div style="color: ${(data.thisMonth?.profit || 0) > 0 ? '#34c759' : '#ff3b30'}; font-weight: 600;">
+        $${(data.thisMonth?.profit || 0).toFixed(2)}
+      </div>
+    </div>
+  `;
+  
+  table.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════
+// AWIN
+// ══════════════════════════════════════════════════════════
+async function refreshAwin(manual) {
+  const statusEl = document.getElementById('awin-status');
+  if (statusEl) {
+    statusEl.textContent = 'Loading...';
+    statusEl.style.background = 'rgba(0, 122, 255, 0.1)';
+    statusEl.style.color = '#007aff';
+  }
+  
+  try {
+    const yesterday = await fetchAwinTransactions('yesterday');
+    const thisMonth = await fetchAwinTransactions('thisMonth');
+    
+    const data = { yesterday, thisMonth };
+    
+    // Check if we got real data or empty fallback
+    const hasData = (yesterday.count > 0 || thisMonth.count > 0);
+    
+    if (statusEl) {
+      if (hasData) {
+        statusEl.textContent = '✓ Connected';
+        statusEl.style.background = 'rgba(52, 199, 89, 0.15)';
+        statusEl.style.color = '#34c759';
+      } else {
+        statusEl.textContent = '⚠ No data';
+        statusEl.style.background = 'rgba(255, 149, 0, 0.15)';
+        statusEl.style.color = '#ff9500';
+      }
+    }
+    
+    // Detect changes
+    if (prevData.awin && !manual) {
+      const changes = detectAwinChanges(prevData.awin, data);
+      if (changes.length > 0 && config.notifyAwin) {
+        notifyChanges('Awin', changes);
+      }
+    }
+    
+    prevData.awin = data;
+    localStorage.setItem('awin_prev', JSON.stringify(prevData.awin));
+    
+    renderAwinTable(data);
+    
+  } catch(e) {
+    console.error('Awin error:', e);
+    
+    if (statusEl) {
+      statusEl.textContent = '✗ Error';
+      statusEl.style.background = 'rgba(255, 59, 48, 0.15)';
+      statusEl.style.color = '#ff3b30';
+    }
+    
+    // Show empty table instead of throwing
+    renderAwinTable({ 
+      yesterday: { total: 0, pending: 0, approved: 0, count: 0 },
+      thisMonth: { total: 0, pending: 0, approved: 0, count: 0 }
+    });
+  }
+}
+
+async function fetchAwinTransactions(period) {
+  const now = new Date();
+  let startDate, endDate;
+  
+  if (period === 'yesterday') {
+    startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - 1);
+    startDate.setHours(0, 0, 0, 0);
+    endDate = new Date(startDate);
+    endDate.setHours(23, 59, 59, 999);
+  } else {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    endDate = new Date(now);
+  }
+  
+  const startStr = startDate.toISOString().split('T')[0];
+  const endStr = endDate.toISOString().split('T')[0];
+  
+  // CORRECT Awin endpoint: /reports/advertiser (not /transactions)
+  const endpoint = `/publishers/${config.awinPublisherId}/reports/advertiser?` + 
+    `accessToken=${encodeURIComponent(config.awinToken)}&` +
+    `startDate=${startStr}&` +
+    `endDate=${endStr}&` +
+    `region=GB&` +
+    `timezone=Europe/Warsaw`;
+    
+  const fullUrl = AWIN_BASE + endpoint;
+  
+  const headers = {
+    'Authorization': `Bearer ${config.awinToken}`,
+    'Accept': 'application/json'
+  };
+  
+  let lastError = null;
+  
+  // Try all proxies
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
+    const url = getProxy() + encodeURIComponent(fullUrl);
+    
+    try {
+      console.log(`Awin: Trying proxy ${i+1}/${CORS_PROXIES.length}: ${getProxy()}`);
+      const res = await fetch(url, { headers });
+      
+      if (!res.ok) {
+        const txt = await res.text();
+        const errorDetail = `HTTP ${res.status}: ${txt.substring(0, 200)}`;
+        console.error(`Awin API error with ${getProxy()}:`, errorDetail);
+        
+        // Specific error messages
+        if (res.status === 401) {
+          console.error('⚠️ Awin: Token is invalid or expired!');
+          console.error('Solution: Generate new token at https://ui.awin.com/awin-api');
+        } else if (res.status === 403) {
+          console.error('⚠️ Awin: Token lacks permissions or proxy blocks request');
+        } else if (res.status === 429) {
+          console.error('⚠️ Awin: Rate limit exceeded (20 req/min)');
+          console.error('Solution: Wait 5 minutes, reduce auto-refresh frequency');
+        } else if (res.status === 404) {
+          console.error('⚠️ Awin: Publisher ID not found or wrong endpoint');
+          console.error('Check Publisher ID in Awin UI (top right)');
+        }
+        
+        lastError = new Error(errorDetail);
+        throw lastError;
+      }
+      
+      const data = await res.json();
+      console.log('✅ Awin success with proxy:', getProxy());
+      console.log('Awin response:', data);
+      
+      // Parse advertiser performance report
+      // Response format: array of advertiser objects with aggregated data
+      let totalCommission = 0;
+      let pending = 0;
+      let approved = 0;
+      let transCount = 0;
+      
+      if (Array.isArray(data)) {
+        for (const advertiser of data) {
+          // Aggregate all advertisers
+          totalCommission += parseFloat(advertiser.totalComm || 0);
+          pending += parseFloat(advertiser.pendingComm || 0);
+          approved += parseFloat(advertiser.confirmedComm || 0);
+          transCount += parseInt(advertiser.totalNo || 0, 10);
+        }
+      }
+      
+      return { 
+        total: totalCommission, 
+        pending, 
+        approved, 
+        count: transCount 
+      };
+      
+    } catch(e) {
+      console.error(`Awin failed with proxy ${getProxy()}:`, e.message);
+      lastError = e;
+      
+      if (i < CORS_PROXIES.length - 1) {
+        tryNextProxy();
+        console.log('Retrying Awin with next proxy...');
+      }
+    }
+  }
+  
+  // If all proxies failed, show detailed error
+  console.error('═══════════════════════════════════════════');
+  console.error('❌ Awin: All proxies failed');
+  console.error('Last error:', lastError?.message);
+  console.error('');
+  console.error('Common solutions:');
+  console.error('1. Token expired → Generate new at https://ui.awin.com/awin-api');
+  console.error('2. Rate limit → Wait 5 minutes');
+  console.error('3. Wrong Publisher ID → Check in Awin UI (top right)');
+  console.error('4. Running from file:// → Use http://localhost or GitHub Pages');
+  console.error('═══════════════════════════════════════════');
+  
+  showError('dash-error', 
+    `Awin error: ${lastError?.message || 'Failed to fetch'}. ` +
+    'Check Console (F12) for details. Most common: token expired.');
+  
+  return { total: 0, pending: 0, approved: 0, count: 0 };
+}
+
+function detectAwinChanges(prev, current) {
+  const changes = [];
+  
+  if (prev.yesterday && current.yesterday) {
+    if (Math.abs((prev.yesterday.total || 0) - (current.yesterday.total || 0)) > 0.01) {
+      changes.push({
+        period: 'Wczoraj',
+        metric: 'Total',
+        old: prev.yesterday.total || 0,
+        new: current.yesterday.total || 0
+      });
+    }
+  }
+  
+  return changes;
+}
+
+function renderAwinTable(data) {
+  const table = document.getElementById('awin-table');
+  
+  const html = `
+    <div class="table-row">
+      <div>Okres</div>
+      <div>Prowizje</div>
+      <div>Status</div>
+    </div>
+    <div class="table-row">
+      <div>Wczoraj</div>
+      <div style="font-weight: 600;">£${(data.yesterday?.total || 0).toFixed(2)}</div>
+      <div style="font-size: 13px; color: #8e8e93;">
+        Pending: £${(data.yesterday?.pending || 0).toFixed(2)}<br>
+        Confirmed: £${(data.yesterday?.approved || 0).toFixed(2)}
+      </div>
+    </div>
+    <div class="table-row">
+      <div>Ten miesiąc</div>
+      <div style="font-weight: 600;">£${(data.thisMonth?.total || 0).toFixed(2)}</div>
+      <div style="font-size: 13px; color: #8e8e93;">
+        Pending: £${(data.thisMonth?.pending || 0).toFixed(2)}<br>
+        Confirmed: £${(data.thisMonth?.approved || 0).toFixed(2)}
+      </div>
+    </div>
+  `;
+  
+  table.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ══════════════════════════════════════════════════════════
+function checkNotificationPermission() {
+  if (!('Notification' in window)) return;
+  
+  if (Notification.permission === 'granted') {
+    pushReady = true;
+  } else if (Notification.permission !== 'denied') {
+    document.getElementById('enable-notifications').style.display = 'block';
+  }
+}
+
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    showToast('Twoja przeglądarka nie obsługuje powiadomień');
+    return;
+  }
+  
+  const permission = await Notification.requestPermission();
+  if (permission === 'granted') {
+    pushReady = true;
+    document.getElementById('enable-notifications').style.display = 'none';
+    showToast('Powiadomienia włączone!');
+  }
+}
+
+function notifyChanges(platform, changes) {
+  const timestamp = new Date().toLocaleString('pl-PL');
+  
+  // Add to log
+  for (const change of changes) {
+    let message = `${platform}: `;
+    
+    if (change.status) {
+      // Partnerize
+      message += `${PZ_STATUS_LABELS[change.status] || change.status} ${change.currency}: `;
+      message += `${formatMoney(change.old, change.currency)} → ${formatMoney(change.new, change.currency)}`;
+      message += ` (${change.diff > 0 ? '+' : ''}${formatMoney(change.diff, change.currency)})`;
+    } else if (change.period) {
+      // Zeropark/Awin
+      message += `${change.period} - ${change.metric}: `;
+      message += `$${change.old.toFixed(2)} → $${change.new.toFixed(2)}`;
+    }
+    
+    notifLog.unshift({ time: timestamp, message });
+  }
+  
+  // Keep last 100
+  notifLog = notifLog.slice(0, 100);
+  saveNotifLog();
+  renderNotifLog();
+  
+  // Push notification
+  if (pushReady && Notification.permission === 'granted') {
+    const title = `${platform} - Zmiany wykryte`;
+    const body = changes.slice(0, 3).map(c => {
+      if (c.status) {
+        return `${PZ_STATUS_LABELS[c.status]}: ${formatMoney(c.old, c.currency)} → ${formatMoney(c.new, c.currency)}`;
+      } else {
+        return `${c.period}: $${c.old.toFixed(2)} → $${c.new.toFixed(2)}`;
+      }
+    }).join('\n');
+    
+    new Notification(title, { body, icon: '/favicon.ico' });
+  }
+  
+  // Email notification
+  if (config.emailjsService && config.notifyEmail && config.emailjsTemplate) {
+    sendEmail(platform, changes);
+  }
+  
+  // Toast
+  showToast(`${platform}: Wykryto ${changes.length} zmian`);
+}
+
+async function sendEmail(platform, changes) {
+  if (!config.emailjsService || !config.emailjsTemplate) return;
+  
+  const changesHtml = changes.map(c => {
+    if (c.status) {
+      return `<li>${PZ_STATUS_LABELS[c.status]} ${c.currency}: ${formatMoney(c.old, c.currency)} → ${formatMoney(c.new, c.currency)} (${c.diff > 0 ? '+' : ''}${formatMoney(c.diff, c.currency)})</li>`;
+    } else {
+      return `<li>${c.period} - ${c.metric}: $${c.old.toFixed(2)} → $${c.new.toFixed(2)}</li>`;
+    }
+  }).join('');
+  
+  const params = {
+    to_email: config.notifyEmail,
+    platform: platform,
+    changes_html: `<ul>${changesHtml}</ul>`,
+    timestamp: new Date().toLocaleString('pl-PL')
+  };
+  
+  try {
+    await emailjs.send(config.emailjsService, config.emailjsTemplate, params);
+    console.log('Email sent successfully');
+  } catch(e) {
+    console.error('Email send error:', e);
+  }
+}
+
+function loadNotifLog() {
+  const saved = localStorage.getItem('notif_log');
+  if (saved) {
+    notifLog = JSON.parse(saved);
+  }
+}
+
+function saveNotifLog() {
+  localStorage.setItem('notif_log', JSON.stringify(notifLog));
+}
+
+function renderNotifLog() {
+  const log = document.getElementById('notif-log');
+  
+  if (!notifLog.length) {
+    log.innerHTML = '<h3>📝 Log Powiadomień</h3><div class="notif-empty">Brak zmian do wyświetlenia</div>';
+    return;
+  }
+  
+  const html = notifLog.slice(0, 50).map(entry => `
+    <div class="notif-entry">
+      <span class="notif-time">${entry.time}</span>
+      <span class="notif-msg">${entry.message}</span>
+    </div>
+  `).join('');
+  
+  log.innerHTML = `<h3>📝 Log Powiadomień</h3>${html}`;
+}
+
+// ══════════════════════════════════════════════════════════
+// AUTO-REFRESH
+// ══════════════════════════════════════════════════════════
+function setupAutoRefresh() {
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+  }
+  
+  const interval = parseInt(document.getElementById('auto-refresh').value);
+  if (interval > 0) {
+    autoRefreshTimer = setInterval(() => refreshAll(false), interval);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════════
+function formatMoney(amount, currency) {
+  return new Intl.NumberFormat('pl-PL', {
+    style: 'currency',
+    currency: currency || 'GBP'
+  }).format(amount);
+}
+
+function showError(id, message) {
+  const el = document.getElementById(id);
+  if (message) {
+    el.textContent = message;
+    el.classList.add('active');
+  } else {
+    el.classList.remove('active');
+  }
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+function setLoading(loading) {
+  const btn = document.getElementById('connect-btn');
+  if (loading) {
+    btn.disabled = true;
+    btn.textContent = 'Łączenie...';
+  } else {
+    btn.disabled = false;
+    btn.textContent = '→ Połącz Dashboard';
+  }
+}
+
+function setConnStatus(connected) {
+  const status = document.getElementById('conn-status');
+  const text = document.getElementById('conn-text');
+  
+  if (connected) {
+    status.classList.remove('disconnected');
+    status.classList.add('connected');
+    text.textContent = 'Połączony';
+  } else {
+    status.classList.remove('connected');
+    status.classList.add('disconnected');
+    text.textContent = 'Rozłączony';
+  }
+}
+
+function updateTimestamp() {
+  const now = new Date();
+  const time = now.toLocaleTimeString('pl-PL');
+  document.getElementById('last-update').textContent = `Ostatnia aktualizacja: ${time}`;
+}
+
+console.log('Affiliate Dashboard loaded successfully');
+</script>
+</body>
+</html>
