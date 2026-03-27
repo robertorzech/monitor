@@ -1,0 +1,13 @@
+name = "partnerize-monitor"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+# Cron - sprawdza co 15 minut, caly czas, 24/7
+[triggers]
+crons = ["*/15 * * * *"]
+
+# KV Namespace - do przechowywania poprzednich wartosci
+# ID uzupelnisz po utworzeniu KV (krok 4 w instrukcji)
+[[kv_namespaces]]
+binding = "MONITOR_KV"
+id = "PLACEHOLDER_UZUPELNIJ_PO_KROKU_4"
