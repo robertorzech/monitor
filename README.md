@@ -60,7 +60,7 @@ Wszystkie wymagają nagłówka `X-Access-Token`, jeśli ustawiono `ACCESS_TOKEN`
 
 ## Dashboard
 
-Otwórz `https://robertorzech.github.io/monitor/`, wpisz adres Workera i token, kliknij **Połącz**.
+Otwórz `https://robertorzech.github.io/monitor/` – strona łączy się sama z `https://partnerize-monitor.robertorzech.workers.dev` (stała `WORKER_URL` w `index.html`). Formularz pojawia się tylko przy błędzie połączenia.
 
 - auto-refresh 5 / 15 / 30 / 60 min,
 - plakietka +/− przy kartach, których kwota zmieniła się od ostatniego odczytu,

@@ -261,6 +261,10 @@ input::placeholder { color: #c7c7cc; }
 // ══════════════════════════════════════════════════════════
 // CONFIG & STATE
 // ══════════════════════════════════════════════════════════
+// Adres Workera wpisany na stałe: strona łączy się sama, bez formularza.
+// Klucze Partnerize są w secrets Workera, nie tutaj.
+const WORKER_URL = 'https://partnerize-monitor.robertorzech.workers.dev';
+
 const LS = {
   config: 'pz_monitor_config',
   autoLogin: 'pz_monitor_auto_login',
@@ -319,7 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
     $('enable-notifications').style.display = 'inline-block';
   }
 
-  if (saved?.workerUrl && lsGet(LS.autoLogin) === 'true') connect();
+  if (WORKER_URL) {
+    $('worker-url').value = WORKER_URL;
+    $('setup').style.display = 'none';
+    connect();
+  } else if (saved?.workerUrl && lsGet(LS.autoLogin) === 'true') {
+    connect();
+  }
 });
 
 // ══════════════════════════════════════════════════════════
@@ -349,6 +359,7 @@ async function connect() {
     showToast('Połączono z Partnerize');
   } catch (e) {
     console.error('Connection error:', e);
+    $('setup').style.display = 'block';
     showError('setup-error', 'Błąd połączenia: ' + e.message + hintFor(e));
   } finally {
     setLoading(false);

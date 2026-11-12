@@ -11,7 +11,7 @@ crons = ["*/15 * * * *"]
 ALLOWED_ORIGIN = "https://robertorzech.github.io"
 
 # KV Namespace - do przechowywania poprzednich wartosci
-# Utworz: npx wrangler kv namespace create MONITOR_KV  -> wklej zwrocone id ponizej
+# Namespace "MONITOR_KV" na koncie Cloudflare
 [[kv_namespaces]]
 binding = "MONITOR_KV"
-id = "PLACEHOLDER_UZUPELNIJ_PO_KROKU_4"
+id = "ff985fc687c440e8994668cb21ee6ba2"
