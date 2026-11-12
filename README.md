@@ -1,299 +1,77 @@
-# 💰 Complete Affiliate Dashboard
-## Partnerize + Zeropark + Awin + Email & Push Notifications
+# 💰 Partnerize Monitor
 
-Kompletny dashboard do monitorowania trzech platform affiliate z automatycznymi powiadomieniami o zmianach.
+Dashboard (GitHub Pages) + Cloudflare Worker do monitorowania **Partnerize Payment Summary**
+(pending / approved / confirmed / available / paid) z powiadomieniami o zmianach kwot.
 
----
+## Dlaczego Worker?
 
-## ✨ Funkcje
+Partnerize API nie wysyła nagłówka `Access-Control-Allow-Origin`, więc przeglądarka nie może
+pytać go bezpośrednio. Wcześniej dashboard szedł przez publiczne proxy CORS (corsproxy.io,
+cors-anywhere, allorigins, codetabs) i przestał działać, gdy wszystkie zostały zamknięte lub
+zaczęły wymagać klucza. Teraz jedynym proxy jest Twój Worker:
 
-### 📊 Trzy platformy w jednym miejscu
-- **Partnerize**: Payment Summary - 5 statusów płatności (Pending, Approved, Confirmed, Available, Paid)
-- **Zeropark**: Statystyki kampanii (wczoraj + ten miesiąc)
-- **Awin**: Transakcje i prowizje z podziałem na statusy
+```
+index.html (GitHub Pages) ──GET /api/summary──▶ Worker ──Basic auth──▶ api.partnerize.com
+                                                  │
+                                    cron co 15 min ┴─▶ KV (poprzedni stan) ─▶ email (EmailJS)
+```
 
-### 🔔 Powiadomienia
-- **Push Notifications** - natywne powiadomienia w przeglądarce/telefonie
-- **Email Notifications** - automatyczne emaile przez EmailJS
-- **Log Powiadomień** - historia wszystkich zmian
+Klucze Partnerize siedzą w secrets Workera, nie w przeglądarce.
 
-### ⚙️ Automatyzacja
-- **Auto-refresh** - wybierz 1/5/15/30 minut
-- **Change Detection** - automatyczne wykrywanie zmian kwot
-- **Zapisywanie konfiguracji** - nie musisz wpisywać kluczy za każdym razem
-
----
-
-## 🚀 Quick Start
-
-### 1. Wgraj na GitHub Pages
+## Wdrożenie Workera (jednorazowo)
 
 ```bash
-# Zmień nazwę pliku na index.html
-mv affiliate-dashboard-complete.html index.html
-
-# Wgraj do repo
-git add index.html
-git commit -m "Add affiliate dashboard"
-git push
+cd worker
+npm install
+npx wrangler login                          # logowanie do Cloudflare w przeglądarce
+npx wrangler kv namespace create MONITOR_KV # skopiuj "id" do wrangler.toml
+npx wrangler secret put PZ_APP_KEY          # Application Key
+npx wrangler secret put PZ_API_KEY          # User API Key
+npx wrangler secret put PZ_PUBLISHER_ID     # Publisher ID, np. 10111308478
+npx wrangler secret put ACCESS_TOKEN        # dowolne hasło do dashboardu (zalecane)
+npx wrangler deploy                         # wypisze adres https://partnerize-monitor.xxx.workers.dev
 ```
 
-W Settings → Pages → Enable
+Opcjonalnie email przy zmianach (cron, 24/7) – patrz `EMAILJS-SETUP.md`:
 
-Dashboard dostępny pod: `https://[username].github.io/[repo]/`
-
----
-
-## 🔑 Konfiguracja API Keys
-
-### Partnerize (3 klucze)
-
-1. Zaloguj się na [Partnerize](https://console.partnerize.com)
-2. Kliknij logo → **Account Settings**
-3. Znajdź:
-   - **Application Key** (User Application Key)
-   - **User API Key** (User API Key)
-4. Kliknij **Settings** u góry → **Publisher ID** (np. `10111308478`)
-
-### Zeropark (1 klucz)
-
-1. Zaloguj się na [Zeropark Panel](https://panel.zeropark.com)
-2. **Dashboard → My Account → Security**
-3. Kliknij **"Create new API access token"**
-4. Skopiuj **API Token**
-
-### Awin (2 klucze)
-
-1. Zaloguj się na [Awin](https://ui.awin.com)
-2. Przejdź do: https://ui.awin.com/awin-api
-3. Wpisz hasło → **"Show my API token"**
-4. Skopiuj **OAuth2 Bearer Token**
-5. **Publisher ID** - widoczny w prawym górnym rogu Awin UI
-
----
-
-## 📧 Email Notifications (opcjonalne)
-
-### Setup EmailJS
-
-1. Zarejestruj się na [emailjs.com](https://emailjs.com)
-2. Dodaj **Email Service** (Gmail/Outlook)
-3. Stwórz **Email Template**:
-
-```
-Subject: {{platform}} - Zmiany wykryte
-
-Wykryto zmiany w {{platform}}:
-
-{{changes_html}}
-
-Czas: {{timestamp}}
+```bash
+npx wrangler secret put EMAILJS_SERVICE
+npx wrangler secret put EMAILJS_TEMPLATE
+npx wrangler secret put EMAILJS_PUBKEY
+npx wrangler secret put NOTIFY_EMAIL
 ```
 
-4. Skopiuj:
-   - **Service ID** (np. `service_xxxxxxx`)
-   - **Template ID** (np. `template_xxxxxxx`)
-   - **Public Key** (Settings → Account)
+W EmailJS włącz *Account → Security → Allow EmailJS API for non-browser applications*,
+inaczej wysyłka z Workera zwróci 403.
 
-5. Wpisz swój email w pole **"Twój Email"**
+Jeśli dashboard ma działać pod innym adresem niż `https://robertorzech.github.io`, zmień
+`ALLOWED_ORIGIN` w `worker/wrangler.toml` (kilka adresów po przecinku, `*` = dowolny).
+`localhost` jest wpuszczany zawsze.
 
----
+## Endpointy Workera
 
-## 🔔 Push Notifications
+| Ścieżka        | Co robi                                              |
+|----------------|------------------------------------------------------|
+| `/api/summary` | aktualne kwoty `{ cards: [{status, currency, amount}] }` |
+| `/api/status`  | kiedy cron ostatnio sprawdzał                        |
+| `/api/check`   | uruchamia sprawdzenie od razu (jak cron, z emailem)  |
 
-### W przeglądarce (desktop/mobile)
+Wszystkie wymagają nagłówka `X-Access-Token`, jeśli ustawiono `ACCESS_TOKEN`.
 
-1. Po połączeniu kliknij **"🔔 Włącz Powiadomienia Push"**
-2. Przeglądarka zapyta o pozwolenie → **Zezwól**
-3. Gotowe! Będziesz dostawać powiadomienia gdy kwoty się zmienią
+## Dashboard
 
-### Na iPhone (PWA)
+Otwórz `https://robertorzech.github.io/monitor/`, wpisz adres Workera i token, kliknij **Połącz**.
 
-1. Otwórz dashboard w **Safari**
-2. Kliknij **Udostępnij** → **"Dodaj do ekranu głównego"**
-3. Aplikacja działa jak natywna!
+- auto-refresh 5 / 15 / 30 / 60 min,
+- plakietka +/− przy kartach, których kwota zmieniła się od ostatniego odczytu,
+- powiadomienia push w przeglądarce (gdy karta jest otwarta) i log zmian,
+- „Zapamiętaj i łącz automatycznie” zapisuje adres i token w `localStorage`.
 
----
+Powiadomienia działające bez otwartej karty wysyła cron Workera (email).
 
-## 📊 Jak działa dashboard?
+## Troubleshooting
 
-### Partnerize Payment Summary
-
-Dashboard pobiera endpoint: `/user/publisher/{id}/payment/summary`
-
-Pokazuje **5 statusów płatności**:
-- 💛 **Pending** - Oczekujące na zatwierdzenie
-- 💚 **Approved** - Zatwierdzone przez reklamodawcę
-- 💙 **Confirmed** - Potwierdzone, dostępne po opłaceniu faktury
-- ✅ **Available** - Dostępne do wypłaty TERAZ
-- 🔵 **Paid** - Już wypłacone
-
-Statusy z £0.00 są **przygaszone** (opacity 0.5) z badge "Brak".
-
-### Zeropark Stats
-
-Dashboard pobiera: `/api/stats/campaign/all`
-
-Pokazuje:
-- **Wczoraj**: wydatki, zysk
-- **Ten miesiąc**: wydatki, zysk
-
-### Awin Transactions
-
-Dashboard pobiera: `/publishers/{id}/transactions/`
-
-Pokazuje prowizje z podziałem:
-- **Pending** - oczekujące
-- **Approved** - zatwierdzone
-
----
-
-## 🔍 Wykrywanie zmian
-
-Dashboard zapisuje poprzedni stan w `localStorage` i porównuje:
-
-### Dla Partnerize:
-Jeśli kwota dla **status_currency** się zmieni (np. `paid_GBP: £75,000 → £76,000`):
-1. 🔔 Push notification
-2. 📧 Email notification
-3. 📝 Wpis w logu
-
-### Dla Zeropark/Awin:
-Jeśli **profit** lub **total** się zmieni:
-1. 🔔 Push notification
-2. 📧 Email notification
-3. 📝 Wpis w logu
-
----
-
-## ⚙️ Auto-Refresh
-
-Wybierz interwał:
-- **1 minuta** - dla krytycznych kampanii
-- **5 minut** - standardowe monitorowanie
-- **15 minut** - zalecane (default)
-- **30 minut** - oszczędzanie API calls
-
-Dashboard automatycznie pobiera dane i wykrywa zmiany w tle.
-
----
-
-## 📱 Responsywność
-
-Dashboard działa na:
-- 💻 Desktop (Chrome, Firefox, Safari, Edge)
-- 📱 Mobile (iOS Safari, Chrome Android)
-- 📲 Jako PWA (instalowalna aplikacja)
-
----
-
-## 🔒 Bezpieczeństwo
-
-- **API keys** zapisane w `localStorage` (tylko w Twojej przeglądarce)
-- **CORS Proxy** używany: `corsproxy.io`
-- **Dla produkcji** zalecane własne proxy
-- **EmailJS** - klucze nie są wysyłane do backendu
-
----
-
-## 🎨 Customization
-
-### Zmiana kolorów statusów
-
-W CSS znajdź:
-```css
-.status-card.pending { border-left-color: #f5a623; }
-.status-card.approved { border-left-color: #00e676; }
-```
-
-Zmień hex na swoje kolory!
-
-### Zmiana interwałów auto-refresh
-
-W HTML znajdź:
-```html
-<option value="60000">1 minuta</option>
-```
-
-Dodaj własne wartości (w milisekundach).
-
----
-
-## 🐛 Troubleshooting
-
-### Partnerize nie łączy się
-- Sprawdź czy masz **3 klucze**: Application Key, User API Key, Publisher ID
-- Otwórz Console (F12) → sprawdź czy endpoint zwraca 404
-- Upewnij się że Publisher ID to liczba (np. `10111308478`)
-
-### Zeropark nie działa
-- Upewnij się że token został **skopiowany bez spacji**
-- Token powinien być długi string (50+ znaków)
-
-### Awin błąd 401
-- Bearer token wygasa po czasie - wygeneruj nowy
-- Sprawdź czy Publisher ID jest poprawny
-
-### Powiadomienia nie działają
-- Push: upewnij się że dałeś **pozwolenie** w przeglądarce
-- Email: sprawdź czy EmailJS **Service**, **Template** i **Public Key** są poprawne
-- Sprawdź Console (F12) czy są błędy
-
-### Dashboard nie wykrywa zmian
-- Auto-refresh musi być **włączony**
-- Zmiany wykrywane tylko gdy kwota **faktycznie się zmieni**
-- Pierwsze uruchomienie **nie wysyła** powiadomień (brak poprzedniego stanu)
-
----
-
-## 📈 Rate Limits
-
-**Partnerize**: Nie określone w dokumentacji  
-**Zeropark**: Nie określone w dokumentacji  
-**Awin**: **20 zapytań/minutę** (dashboard używa 2 na refresh)
-
-Zalecane: **Auto-refresh co 15-30 minut**
-
----
-
-## 🔄 Aktualizacje
-
-Dashboard zapisuje konfigurację - po zamknięciu karty możesz:
-1. Kliknąć **"Załaduj Zapisaną Konfigurację"**
-2. Dashboard automatycznie wypełni wszystkie pola
-3. Kliknij "Połącz" - gotowe!
-
----
-
-## 💡 Pro Tips
-
-1. **Używaj 15-minutowego auto-refresh** - zmiany statusów płatności nie następują co minutę
-2. **Włącz push notifications** - będziesz wiedzieć natychmiast gdy coś się zmieni
-3. **Sprawdź log powiadomień** - historia wszystkich zmian w jednym miejscu
-4. **Zapisz jako PWA** na telefonie - dashboard zawsze pod ręką
-5. **EmailJS darmowy plan** pozwala na 200 emaili/miesiąc - wystarczy!
-
----
-
-## 📞 Support
-
-Jeśli masz problemy:
-1. Sprawdź **Console** (F12 → Console)
-2. Upewnij się że API keys są poprawne
-3. Sprawdź czy CORS proxy działa (odwiedź `corsproxy.io`)
-
----
-
-## 🎯 Roadmap
-
-Możliwe rozszerzenia (jeśli potrzebujesz):
-- [ ] Google Sheets export
-- [ ] Slack notifications
-- [ ] Discord webhooks
-- [ ] Custom alerting rules (np. "powiadom gdy Paid > £100k")
-- [ ] Historical charts
-- [ ] Multiple accounts support
-
----
-
-**Zrobione z ❤️ dla affiliate marketers**
+- **Failed to fetch** – zły adres Workera albo `ALLOWED_ORIGIN` nie zawiera adresu strony.
+- **Nieprawidlowy token dostepu** – token w dashboardzie ≠ `ACCESS_TOKEN`.
+- **Partnerize API 401/403** – złe `PZ_APP_KEY` / `PZ_API_KEY` / `PZ_PUBLISHER_ID`.
+- Podgląd logów Workera: `npx wrangler tail`.

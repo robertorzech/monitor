@@ -43,7 +43,7 @@ Aby przestać otrzymywać powiadomienia, zmień ustawienia w dashboardzie.
 ```
 
 ### Template Variables (do sprawdzenia):
-- `{{platform}}` - nazwa platformy (Partnerize/Zeropark/Awin)
+- `{{platform}}` - nazwa platformy (Partnerize)
 - `{{changes_html}}` - HTML lista zmian
 - `{{timestamp}}` - czas wykrycia zmian
 

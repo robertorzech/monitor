@@ -6,8 +6,12 @@ compatibility_date = "2024-09-23"
 [triggers]
 crons = ["*/15 * * * *"]
 
+# Origin dashboardu (GitHub Pages). localhost jest wpuszczany zawsze (testy).
+[vars]
+ALLOWED_ORIGIN = "https://robertorzech.github.io"
+
 # KV Namespace - do przechowywania poprzednich wartosci
-# ID uzupelnisz po utworzeniu KV (krok 4 w instrukcji)
+# Utworz: npx wrangler kv namespace create MONITOR_KV  -> wklej zwrocone id ponizej
 [[kv_namespaces]]
 binding = "MONITOR_KV"
 id = "PLACEHOLDER_UZUPELNIJ_PO_KROKU_4"

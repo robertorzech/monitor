@@ -1,176 +1,198 @@
 // Cloudflare Worker - Partnerize Monitor
-// Uruchamia sie co 15 minut i wysyla email gdy zmieni sie kwota
+// 1) Co 15 minut (cron) sprawdza Payment Summary i wysyla email przy zmianie kwot.
+// 2) Udostepnia dane dla dashboardu (GitHub Pages) pod /api/summary z naglowkami CORS.
+//    Partnerize API nie wysyla Access-Control-Allow-Origin, wiec przegladarka nie moze
+//    pytac go bezposrednio - Worker jest jedynym proxy (klucze zostaja w secrets).
+//
+// Secrets (wrangler secret put ...):
+//   PZ_APP_KEY, PZ_API_KEY, PZ_PUBLISHER_ID      - wymagane
+//   ACCESS_TOKEN                                 - zalecane: haslo do /api/* (naglowek X-Access-Token)
+//   EMAILJS_SERVICE, EMAILJS_TEMPLATE, EMAILJS_PUBKEY, NOTIFY_EMAIL - opcjonalne (email)
+// Vars (wrangler.toml):
+//   ALLOWED_ORIGIN - origin dashboardu, np. https://robertorzech.github.io ("*" = dowolny)
+
+const PZ_BASE_URLS = ['https://api.partnerize.com', 'https://api.performancehorizon.com'];
+const STATUS_ORDER = ['pending', 'approved', 'confirmed', 'available', 'paid'];
 
 export default {
-  // Cron trigger - odpala sie automatycznie co 15 minut
   async scheduled(event, env, ctx) {
     ctx.waitUntil(checkPartnerize(env));
   },
 
-  // HTTP endpoint - do recznego sprawdzenia i testow
-  async fetch(request, env, ctx) {
+  async fetch(request, env) {
     const url = new URL(request.url);
+    const cors = corsHeaders(request, env);
 
-    if (url.pathname === '/check') {
-      const result = await checkPartnerize(env);
-      return new Response(JSON.stringify(result, null, 2), {
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: cors });
     }
 
-    if (url.pathname === '/status') {
-      const prevRaw = await env.MONITOR_KV.get('pz_prev');
-      const lastCheck = await env.MONITOR_KV.get('last_check');
-      return new Response(
-        JSON.stringify({
-          status: 'running',
-          last_check: lastCheck || 'never',
-          has_data: !!prevRaw,
-        }, null, 2),
-        { headers: { 'Content-Type': 'application/json' } }
-      );
+    if (url.pathname.startsWith('/api/')) {
+      if (env.ACCESS_TOKEN && request.headers.get('X-Access-Token') !== env.ACCESS_TOKEN) {
+        return json({ error: 'Nieprawidlowy token dostepu' }, 401, cors);
+      }
+
+      if (url.pathname === '/api/summary') {
+        try {
+          const cards = await fetchSummary(env);
+          return json({ fetched_at: new Date().toISOString(), cards }, 200, cors);
+        } catch (e) {
+          return json({ error: e.message }, e.status || 502, cors);
+        }
+      }
+
+      if (url.pathname === '/api/status') {
+        const prevRaw = await env.MONITOR_KV.get('pz_prev');
+        const lastCheck = await env.MONITOR_KV.get('last_check');
+        return json({ status: 'running', last_check: lastCheck || 'never', has_data: !!prevRaw }, 200, cors);
+      }
+
+      if (url.pathname === '/api/check') {
+        return json(await checkPartnerize(env), 200, cors);
+      }
     }
 
-    return new Response('Partnerize Monitor Worker - OK\n/check - sprawdz teraz\n/status - status', {
-      status: 200,
-    });
+    return new Response(
+      'Partnerize Monitor Worker - OK\n/api/summary - dane dla dashboardu\n/api/status - status crona\n/api/check - sprawdz teraz (cron + email)\n',
+      { status: 200, headers: cors }
+    );
   },
 };
 
-async function checkPartnerize(env) {
-  const {
-    PZ_APP_KEY,
-    PZ_API_KEY,
-    PZ_PUBLISHER_ID,
-    EMAILJS_SERVICE,
-    EMAILJS_TEMPLATE,
-    EMAILJS_PUBKEY,
-    NOTIFY_EMAIL,
-  } = env;
+function corsHeaders(request, env) {
+  const allowed = (env.ALLOWED_ORIGIN || '*').split(',').map((s) => s.trim());
+  const origin = request.headers.get('Origin') || '';
+  const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+  let allowOrigin = allowed[0];
+  if (allowed.includes('*')) allowOrigin = '*';
+  else if (allowed.includes(origin) || isLocal) allowOrigin = origin;
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'X-Access-Token, Content-Type',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Origin',
+  };
+}
 
-  // Walidacja - sprawdz czy secrets sa ustawione
+function json(body, status, headers) {
+  return new Response(JSON.stringify(body, null, 2), {
+    status,
+    headers: { ...headers, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+  });
+}
+
+// Pobiera Payment Summary i zwraca znormalizowana liste {status, currency, amount}
+async function fetchSummary(env) {
+  const { PZ_APP_KEY, PZ_API_KEY, PZ_PUBLISHER_ID } = env;
   if (!PZ_APP_KEY || !PZ_API_KEY || !PZ_PUBLISHER_ID) {
-    console.error('Brak kluczy Partnerize - ustaw secrets w Cloudflare');
-    return { error: 'Brak kluczy Partnerize' };
+    const err = new Error('Brak kluczy Partnerize w secrets Workera (PZ_APP_KEY, PZ_API_KEY, PZ_PUBLISHER_ID)');
+    err.status = 500;
+    throw err;
   }
 
-  // Pobierz dane z Partnerize API bezposrednio (Worker nie ma problemu z CORS)
-  const authHeader = 'Basic ' + btoa(`${PZ_APP_KEY}:${PZ_API_KEY}`);
-  let currentData;
+  const headers = {
+    Authorization: 'Basic ' + btoa(`${PZ_APP_KEY}:${PZ_API_KEY}`),
+    Accept: 'application/json',
+  };
 
-  try {
-    // Probuj glowny endpoint
-    let response = await fetch(
-      `https://api.performancehorizon.com/user/publisher/${PZ_PUBLISHER_ID}/payment/summary`,
-      {
-        headers: {
-          Authorization: authHeader,
-          Accept: 'application/json',
-        },
+  let lastErr;
+  for (const base of PZ_BASE_URLS) {
+    try {
+      const res = await fetch(`${base}/user/publisher/${encodeURIComponent(PZ_PUBLISHER_ID)}/payment/summary`, { headers });
+      if (!res.ok) {
+        const text = await res.text();
+        lastErr = new Error(`Partnerize API ${res.status}: ${text.slice(0, 200)}`);
+        lastErr.status = res.status === 401 || res.status === 403 ? res.status : 502;
+        continue;
       }
-    );
+      return normalizeSummary(await res.json());
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('Nie udalo sie pobrac danych z Partnerize');
+}
 
-    // Fallback na drugi endpoint jesli pierwszy nie dziala
-    if (!response.ok) {
-      response = await fetch(
-        `https://api.partnerize.com/user/publisher/${PZ_PUBLISHER_ID}/payment/summary`,
-        {
-          headers: {
-            Authorization: authHeader,
-            Accept: 'application/json',
-          },
+// Obsluguje oba spotykane ksztalty odpowiedzi:
+//  a) { payments: { summary: { pending: { GBP: "12.34" }, ... } } }
+//  b) { payments: { summary: [ { status, currency, amount }, ... ] } }  (takze pod data.*)
+function normalizeSummary(data) {
+  const root = data?.data ?? data;
+  const summary = root?.payments?.summary ?? root?.payment?.summary ?? root?.summary ?? root;
+  const cards = [];
+
+  if (Array.isArray(summary)) {
+    for (const item of summary) {
+      const amount = parseFloat(item?.amount);
+      if (item?.status && item?.currency && !isNaN(amount)) {
+        cards.push({ status: String(item.status).toLowerCase(), currency: item.currency, amount });
+      }
+    }
+  } else if (summary && typeof summary === 'object') {
+    for (const [status, byCurrency] of Object.entries(summary)) {
+      if (!byCurrency || typeof byCurrency !== 'object' || Array.isArray(byCurrency)) continue;
+      for (const [currency, value] of Object.entries(byCurrency)) {
+        const amount = parseFloat(value);
+        if (/^[A-Z]{3}$/.test(currency) && !isNaN(amount)) {
+          cards.push({ status: status.toLowerCase(), currency, amount });
         }
-      );
+      }
     }
+  }
 
-    if (!response.ok) {
-      throw new Error(`Partnerize API error: ${response.status} ${response.statusText}`);
-    }
+  const rank = (s) => (STATUS_ORDER.indexOf(s) + 1 || 99);
+  cards.sort((a, b) => rank(a.status) - rank(b.status) || a.currency.localeCompare(b.currency));
+  return cards;
+}
 
-    const data = await response.json();
-    const summary =
-      data?.data?.payments?.summary ||
-      data?.data?.payment?.summary ||
-      [];
-
-    currentData = summary.map((item) => ({
-      key: `${item.status}_${item.currency}`,
-      status: item.status,
-      currency: item.currency,
-      amount: parseFloat(item.amount || 0),
-    }));
+async function checkPartnerize(env) {
+  let currentData;
+  try {
+    currentData = (await fetchSummary(env)).map((c) => ({ ...c, key: `${c.status}_${c.currency}` }));
   } catch (error) {
     console.error('Blad pobierania Partnerize:', error.message);
     await env.MONITOR_KV.put('last_check', `ERROR: ${new Date().toISOString()} - ${error.message}`);
     return { error: error.message };
   }
 
-  // Pobierz poprzednie dane z KV
   const prevRaw = await env.MONITOR_KV.get('pz_prev');
   const prevData = prevRaw ? JSON.parse(prevRaw) : null;
 
-  // Wykryj zmiany
   const changes = [];
-  if (prevData && prevData.length > 0) {
-    const prevMap = {};
-    prevData.forEach((item) => {
-      prevMap[item.key] = item.amount;
-    });
-
-    currentData.forEach((item) => {
-      const prevAmount = prevMap[item.key];
-      if (prevAmount !== undefined) {
-        if (Math.abs(item.amount - prevAmount) > 0.01) {
-          changes.push({
-            status: item.status,
-            currency: item.currency,
-            prev: prevAmount,
-            current: item.amount,
-            diff: item.amount - prevAmount,
-          });
-        }
-      } else {
-        // Nowa kategoria pojawiła sie
-        if (item.amount > 0) {
-          changes.push({
-            status: item.status,
-            currency: item.currency,
-            prev: 0,
-            current: item.amount,
-            diff: item.amount,
-            new: true,
-          });
-        }
+  if (prevData) {
+    const prevMap = Object.fromEntries(prevData.map((i) => [i.key, i.amount]));
+    const currMap = Object.fromEntries(currentData.map((i) => [i.key, i]));
+    const keys = new Set([...Object.keys(prevMap), ...Object.keys(currMap)]);
+    for (const key of keys) {
+      const prev = prevMap[key] ?? 0;
+      const curr = currMap[key]?.amount ?? 0;
+      if (Math.abs(curr - prev) > 0.01) {
+        const [status, currency] = key.split('_');
+        changes.push({ status, currency, prev, current: curr, diff: curr - prev });
       }
-    });
+    }
   }
 
-  // Zapisz aktualne dane do KV
   await env.MONITOR_KV.put('pz_prev', JSON.stringify(currentData));
   const now = new Date().toISOString();
   await env.MONITOR_KV.put('last_check', now);
 
-  // Wyslij powiadomienie jesli sa zmiany (i mamy dane historyczne)
-  if (changes.length > 0 && prevData) {
+  if (changes.length > 0) {
     console.log(`Wykryto ${changes.length} zmian - wysylam email`);
     await sendEmailNotification(env, changes);
   }
 
-  return {
-    checked: now,
-    changes_count: changes.length,
-    changes,
-    data: currentData,
-  };
+  return { checked: now, changes_count: changes.length, changes, data: currentData };
 }
 
 async function sendEmailNotification(env, changes) {
   if (!env.EMAILJS_SERVICE || !env.EMAILJS_TEMPLATE || !env.EMAILJS_PUBKEY || !env.NOTIFY_EMAIL) {
-    console.error('Brak konfiguracji EmailJS - nie mozna wyslac emaila');
+    console.log('Brak konfiguracji EmailJS - pomijam email');
     return;
   }
 
-  const changesHtml = changes
+  const rows = changes
     .map((c) => {
       const sign = c.diff > 0 ? '+' : '';
       const color = c.diff > 0 ? '#27ae60' : '#e74c3c';
@@ -184,7 +206,7 @@ async function sendEmailNotification(env, changes) {
     })
     .join('');
 
-  const changesHtmlFull = `
+  const changesHtml = `
     <table style="border-collapse:collapse;width:100%;font-family:sans-serif;">
       <tr style="background:#2c3e50;color:white;">
         <th style="padding:8px;border:1px solid #ddd;">Status</th>
@@ -193,11 +215,8 @@ async function sendEmailNotification(env, changes) {
         <th style="padding:8px;border:1px solid #ddd;">Aktualna</th>
         <th style="padding:8px;border:1px solid #ddd;">Zmiana</th>
       </tr>
-      ${changesHtml}
-    </table>
-  `;
-
-  const timestamp = new Date().toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' });
+      ${rows}
+    </table>`;
 
   try {
     const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -210,18 +229,13 @@ async function sendEmailNotification(env, changes) {
         template_params: {
           to_email: env.NOTIFY_EMAIL,
           platform: 'Partnerize',
-          changes_html: changesHtmlFull,
-          timestamp,
+          changes_html: changesHtml,
+          timestamp: new Date().toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' }),
         },
       }),
     });
-
-    if (response.ok) {
-      console.log('Email wyslany pomyslnie');
-    } else {
-      const text = await response.text();
-      console.error('Blad EmailJS:', response.status, text);
-    }
+    if (response.ok) console.log('Email wyslany pomyslnie');
+    else console.error('Blad EmailJS:', response.status, await response.text());
   } catch (err) {
     console.error('Blad wysylania emaila:', err.message);
   }
